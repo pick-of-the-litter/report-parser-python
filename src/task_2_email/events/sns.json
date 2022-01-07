@@ -1,0 +1,23 @@
+{
+	"Records": [{
+		"EventSource": "aws:sns",
+		"EventVersion": "1.0",
+		"EventSubscriptionArn": "arn:aws:sns:eu-west-1:762461925189:Task2:fae74f76-27eb-496b-8803-c7ac80e788e4",
+		"Sns": {
+			"Type": "Notification",
+			"MessageId": "a610ea26-58b5-5d28-8569-b077a7a909fe",
+			"TopicArn": "arn:aws:sns:eu-west-1:762461925189:Task2",
+			"Subject": "None",
+			"Message": {
+				"Doe, John": {
+					"applications ": [
+						"Data Engineering"
+					],
+					"email": "ashley.murphy@bp.com"
+				}
+			},
+			"Timestamp": "2022-01-07T08:42:04.462Z",
+			"MessageAttributes": {}
+		}
+	}]
+}

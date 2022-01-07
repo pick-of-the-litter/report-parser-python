@@ -1,0 +1,32 @@
+{
+	"Records": [{
+		"eventVersion": "2.1",
+		"eventSource": "aws:s3",
+		"awsRegion": "eu-west-1",
+		"eventTime": "2022-01-06T11:55:57.694Z",
+		"eventName": "ObjectCreated:Put",
+		"requestParameters": {
+			"sourceIPAddress": "217.155.11.212"
+		},
+		"responseElements": {
+			"x-amz-request-id": "584NZH44D69CE8CN",
+			"x-amz-id-2": "N94HZInlNBAy4qWw5zcWJhR8q9VMdM6WyZZsNS+vpxp/MPub+DJ5Aq9Mmu6YmF3z9sDXIkS+P3MdbGcDcb9gVXgU88/z2ZQG"
+		},
+		"s3": {
+			"s3SchemaVersion": "1.0",
+			"configurationId": "b1a6b66b-8de0-4eb4-8e1f-3ed47a4a28ae",
+			"bucket": {
+				"name": "reports-parser-reportsbucket-1lkitlj1w9xsr",
+				"arn": "arn:aws:s3:::reports-parser-reportsbucket-1lkitlj1w9xsr"
+			},
+			"object": {
+				"key": "report.xlsx",
+				"size": 9035,
+				"eTag": "7235e93be1f4348f345e61bdc1aea6ec",
+				"sequencer": "0061D6D8CDA324BEDB"
+			}
+		}
+	}]
+}
+
+

@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources: 
+  ReportsBucket:
+    Type : AWS::S3::Bucket
+    Name: reports-parser-report-bucket
+  ContactTable:
+    Type: AWS::Serverless::SimpleTable
+
+  # Topics
+  Task2Topic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: Task2
+
+  Task2Suscription:
+     Type: AWS::SNS::Subscription
+     Properties:
+       Protocol: lambda
+       TopicArn: !Ref Task2Topic
+       Endpoint: !GetAtt Task2Email.Arn
+
+  # Lambdas    
+  ReportParser:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.7
+      CodeUri: ./src/report_parser
+      Handler: handler.handler
+      Layers:
+        - arn:aws:lambda:eu-west-1:762461925189:layer:pandas:6
+      Timeout: 10
+      Environment:
+        Variables:
+          EMAIL_LOOKUP_TABLE: !Ref ContactTable
+          TASK2_TOPIC_ARN: !Ref Task2Topic
+      Policies:
+      - Statement:
+        - Sid: S3GetObject
+          Effect: Allow
+          Action:
+          - s3:GetObject
+          Resource: '*'
+      - Statement:
+        - Sid: DynamoGetItem
+          Effect: Allow
+          Action:
+          - dynamodb:GetItem
+          Resource: !GetAtt ContactTable.Arn
+      - Statement:
+        - Sid: PublishToSNS
+          Effect: Allow
+          Action:
+          - SNS:Publish
+          Resource: [!Ref Task2Topic]
+      Events:
+        ReportAdded:
+          Type: S3
+          Properties:
+            Bucket: !Ref ReportsBucket
+            Events: s3:ObjectCreated:*
+
+  Task2Invoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref Task2Topic
+      FunctionName: !GetAtt Task2Email.Arn
+
+  Task2Email:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.7
+      CodeUri: ./src/task_2_email
+      Handler: handler.handler  
+
+ 
