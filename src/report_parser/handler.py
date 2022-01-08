@@ -62,10 +62,10 @@ def get_email(owner, db):
     item = db.get_item(
         Key={
             "id": {
-                "S": "Verma, Steevan"
+                "S": owner
             }
         },
-        TableName="reports-parser-ContactTable-TNF6F0FU8GUA",
+        TableName=EMAIL_LOOKUP_TABLE,
         ProjectionExpression="Email"
     )
 

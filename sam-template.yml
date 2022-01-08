@@ -1,5 +1,17 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  Task2TemplateName:
+    Type: String
+    Default: Task2
+  Task2SubjectPart:
+    Type: String
+    Default: Validation of Service Portfolio Owners in Service Now
+  Task2HtmlPart:
+    Type: String
+    Default: "<h1>Validation of Service Portfolio Owners in Service Now</h1><p>Dear {{contact}}, </br>Please could you reply to this email to confirm that you are still the Service Portfolio Ownerof the following portfolios(s):</p><ul>{{#each applications}}<li>{{application}}</li>{{/each}}</ul><p>Kind regards,</p><p>{{sender}}</p>"
+
 Resources: 
   ReportsBucket:
     Type : AWS::S3::Bucket
@@ -41,18 +53,10 @@ Resources:
           Action:
           - s3:GetObject
           Resource: '*'
-      - Statement:
-        - Sid: DynamoGetItem
-          Effect: Allow
-          Action:
-          - dynamodb:GetItem
-          Resource: !GetAtt ContactTable.Arn
-      - Statement:
-        - Sid: PublishToSNS
-          Effect: Allow
-          Action:
-          - SNS:Publish
-          Resource: [!Ref Task2Topic]
+      - DynamoDBReadPolicy:
+          TableName: !Ref ContactTable
+      - SNSPublishMessagePolicy:
+            TopicName: !GetAtt Task2Topic.TopicName
       Events:
         ReportAdded:
           Type: S3
@@ -74,5 +78,20 @@ Resources:
       Runtime: python3.7
       CodeUri: ./src/task_2_email
       Handler: handler.handler  
+      Policies:
+        - Statement:
+          - Sid: SendTemplatedEmail
+            Effect: Allow
+            Action: [ses:GetTemplate, ses:SendTemplatedEmail]
+            Resource: "*"
+      Environment:
+        Variables:
+          TEMPLATE_NAME: !Ref Task2Template
 
- 
+  Task2Template:
+    Type: 'AWS::SES::Template'
+    Properties:
+      Template:
+        TemplateName: !Ref Task2TemplateName
+        SubjectPart: !Ref Task2SubjectPart
+        HtmlPart: !Ref Task2HtmlPart

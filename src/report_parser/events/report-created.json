@@ -16,7 +16,7 @@
 			"s3SchemaVersion": "1.0",
 			"configurationId": "b1a6b66b-8de0-4eb4-8e1f-3ed47a4a28ae",
 			"bucket": {
-				"name": "reports-parser-reportsbucket-1lkitlj1w9xsr",
+				"name": "reports-parser-reportsbucket-qk37pfrybhb5",
 				"arn": "arn:aws:s3:::reports-parser-reportsbucket-1lkitlj1w9xsr"
 			},
 			"object": {
