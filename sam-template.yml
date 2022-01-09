@@ -5,9 +5,11 @@ Parameters:
   Task2TemplateName:
     Type: String
     Default: Task2
+
   Task2SubjectPart:
     Type: String
     Default: Validation of Service Portfolio Owners in Service Now
+
   Task2HtmlPart:
     Type: String
     Default: "<h1>Validation of Service Portfolio Owners in Service Now</h1><p>Dear {{contact}}, </br>Please could you reply to this email to confirm that you are still the Service Portfolio Ownerof the following portfolios(s):</p><ul>{{#each applications}}<li>{{application}}</li>{{/each}}</ul><p>Kind regards,</p><p>{{sender}}</p>"
@@ -16,23 +18,10 @@ Resources:
   ReportsBucket:
     Type : AWS::S3::Bucket
     Name: reports-parser-report-bucket
+
   ContactTable:
-    Type: AWS::Serverless::SimpleTable
+    Type: AWS::Serverless::SimpleTable   
 
-  # Topics
-  Task2Topic:
-    Type: AWS::SNS::Topic
-    Properties:
-      TopicName: Task2
-
-  Task2Suscription:
-     Type: AWS::SNS::Subscription
-     Properties:
-       Protocol: lambda
-       TopicArn: !Ref Task2Topic
-       Endpoint: !GetAtt Task2Email.Arn
-
-  # Lambdas    
   ReportParser:
     Type: AWS::Serverless::Function
     Properties:
@@ -45,7 +34,10 @@ Resources:
       Environment:
         Variables:
           EMAIL_LOOKUP_TABLE: !Ref ContactTable
-          TASK2_TOPIC_ARN: !Ref Task2Topic
+          TASK2_TOPIC_ARN:    
+           Fn::GetAtt:
+             - Task2
+             - Outputs.TopicArn
       Policies:
       - Statement:
         - Sid: S3GetObject
@@ -56,42 +48,24 @@ Resources:
       - DynamoDBReadPolicy:
           TableName: !Ref ContactTable
       - SNSPublishMessagePolicy:
-            TopicName: !GetAtt Task2Topic.TopicName
+            TopicName:            
+              Fn::GetAtt:
+                - Task2
+                - Outputs.TopicName
       Events:
         ReportAdded:
           Type: S3
           Properties:
             Bucket: !Ref ReportsBucket
             Events: s3:ObjectCreated:*
-
-  Task2Invoke:
-    Type: AWS::Lambda::Permission
+            
+  Task2:
+    Type: AWS::Serverless::Application
     Properties:
-      Action: lambda:InvokeFunction
-      Principal: sns.amazonaws.com
-      SourceArn: !Ref Task2Topic
-      FunctionName: !GetAtt Task2Email.Arn
-
-  Task2Email:
-    Type: AWS::Serverless::Function
-    Properties:
-      Runtime: python3.7
-      CodeUri: ./src/task_2_email
-      Handler: handler.handler  
-      Policies:
-        - Statement:
-          - Sid: SendTemplatedEmail
-            Effect: Allow
-            Action: [ses:GetTemplate, ses:SendTemplatedEmail]
-            Resource: "*"
-      Environment:
-        Variables:
-          TEMPLATE_NAME: !Ref Task2Template
-
-  Task2Template:
-    Type: 'AWS::SES::Template'
-    Properties:
-      Template:
-        TemplateName: !Ref Task2TemplateName
-        SubjectPart: !Ref Task2SubjectPart
-        HtmlPart: !Ref Task2HtmlPart
+      Location: ./sam-task-lambda-template.yml
+      Parameters:
+        TemplateName: Task2
+        SubjectPart: Validation of Service Portfolio Owners in Service Now
+        HtmlPart: "<h1>Validation of Service Portfolio Owners in Service Now</h1><p>Dear {{contact}}, </br>Please could you reply to this email to confirm that you are still the Service Portfolio Ownerof the following portfolios(s):</p><ul>{{#each applications}}<li>{{application}}</li>{{/each}}</ul><p>Kind regards,</p><p>{{sender}}</p>"
+        CodeUri: ./src/task_2_email
+        TopicName: Task2

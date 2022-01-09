@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  TemplateName:
+    Type: String
+  SubjectPart:
+    Type: String
+  HtmlPart:
+    Type: String
+  CodeUri:
+    Type: String
+  TopicName:
+    Type: String
+
+
+Resources:
+  SNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Ref TopicName
+
+  SNSSubcription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Protocol: lambda
+        TopicArn: !Ref SNSTopic
+        Endpoint: !GetAtt EmailLambda.Arn
+
+  LambdaInvoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref SNSTopic
+      FunctionName: !GetAtt EmailLambda.Arn
+
+  Template:
+    Type: 'AWS::SES::Template'
+    Properties:
+      Template:
+        TemplateName: !Ref TemplateName
+        SubjectPart: !Ref SubjectPart
+        HtmlPart: !Ref HtmlPart
+
+  EmailLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.7
+      CodeUri: ./src/task_2_email
+      Handler: handler.handler  
+      Policies:
+        - Statement:
+          - Sid: SendTemplatedEmail
+            Effect: Allow
+            Action: [ses:GetTemplate, ses:SendTemplatedEmail]
+            Resource: "*"
+      Environment:
+        Variables:
+          TEMPLATE_NAME: !Ref Template
+
+Outputs:
+  TopicName:
+    Description: Name of the topic associated with the lambda
+    Value: !GetAtt SNSTopic.TopicName
+    
+  TopicArn:
+    Description: ARN of the topic associated with the lambda
+    Value: !Ref SNSTopic
+
