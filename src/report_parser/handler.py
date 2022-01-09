@@ -92,5 +92,4 @@ def get_email(owner, db):
         ProjectionExpression="Email"
     )
 
-    # return item["Item"]["Email"]["S"]
-    return "amurphy9956@live.com"
+    return item["Item"]["Email"]["S"]
