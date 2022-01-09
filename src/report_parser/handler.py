@@ -20,17 +20,37 @@ EMAIL_LOOKUP_TABLE=os.environ.get("EMAIL_LOOKUP_TABLE")
 
 
 def handler(event, context):
-    # connect to s3 and pull the file
-    logger.info(event)
-    s3 = resource("s3")
-    db = client("dynamodb")
-    s3_data=event["Records"][0]["s3"]
-    response=s3.Object(s3_data["bucket"]["name"], s3_data["object"]["key"]).get()
-    logger.info(response)
-    
-    excel_file = BytesIO(response["Body"].read())
+    try:
+        logger.info(f"Handling event: {event}")
+        s3 = resource("s3")
+        db = client("dynamodb")
+        s3_data=event["Records"][0]["s3"]
+        response=s3.Object(
+            s3_data["bucket"]["name"],
+            s3_data["object"]["key"]
+        ).get()
+        logger.info(response)
+        
+        excel_file = BytesIO(response["Body"].read())
+        parse_task_two(db, excel_file)
+    except Exception as e:
+        logger.error(f"The following error occurred: \n{repr(e)}")
+        return {
+            "headers": {"Content-Type": "application/json"},
+            "statusCode": 500,
+            "body": json.dumps({"message": "Error occurred please contact an admin."}),
+        }
+
+    return {
+        "headers": {"Content-Type": "application/json"},
+        "statusCode": 200,
+        "body": json.dumps({"message": "Report finished parsing"}),
+    }
+
+def parse_task_two(db, excel_file):
     task_two = pd.read_excel(excel_file, sheet_name="Task2", usecols=["Service Portfolio Owned by", "Service Portfolio"])
 
+    sns = resource("sns")
     #create list of apps assigned top each person
     dedupe_map = {}
     for app, owner in task_two.values:
@@ -44,19 +64,18 @@ def handler(event, context):
     
     logger.info(dedupe_map)
 
-    sns = resource('sns')
     topic = sns.Topic(TASK2_TOPIC_ARN)
 
     for owner, values in dedupe_map.items():
-        response=topic.publish(
-            Message=json.dumps({
+        message=json.dumps({
                 owner: values
             })
+        logger.info(f"Publishing: {message}")
+        response=topic.publish(
+            Message=message
         )
 
-        logger.info(response)
-
-    pass
+        logger.info(f"Published message with response: {response}")
 
 def get_email(owner, db):
     item = db.get_item(
